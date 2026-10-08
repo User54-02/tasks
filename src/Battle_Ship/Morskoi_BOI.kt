@@ -1,100 +1,110 @@
-fun createEmptyField(size: Int = 10): Array<CharArray> {
-    return Array(size) { CharArray(size) { '.' } }
-}
-fun printField(
-    field: Array<CharArray>,
-    title: String,
-    showShips: Boolean = true,
-    debug: Boolean = false
-) {
-    val size = field.size
-    if (debug) {
-        println("=== $title (debug) ===")
-        val border = "+" + "--+".repeat(size)
-        println("   $border")
-        for (r in field.indices) {
-            print("$r |")
-            for (c in field.indices) {
-                val ch = field[r][c]
-                val toPrint = if (!showShips && ch == '#') '.' else ch
-                print(" $toPrint|")
-            }
-            println()
-            println("   $border")
-        }
-        return
-    }
-    println("=== $title ===")
-    print("  ")
-    for (c in field.indices) print("$c ")
-    println()
-    for (r in field.indices) {
-        print("$r ")
-        for (c in field.indices) {
-            val ch = field[r][c]
-            val toPrint = if (!showShips && ch == '#') '.' else ch
-            print("$toPrint ")
-        }
+class Player {
+    var name: String = ""
+    var field: Array<CharArray> = Array(10) { CharArray(10) { '.' } }
+    var shots: Int = 0
+    var hits: Int = 0
+    var shipsLeft: Int = 20
+
+    fun printField() {
+        println("=== Поле игрока $name ===")
+        print("  ")
+        for (c in 0..9) print("$c ")
         println()
+        for (r in 0..9) {
+            print("$r ")
+            for (c in 0..9) print("${field[r][c]} ")
+            println()
+        }
+    }
+    fun isAlive(): Boolean {
+        return shipsLeft > 0
+    }
+    fun accuracy(): Double {
+        if (shots == 0) return 0.0
+        return hits * 100.0 / shots
+    }
+    fun status(): String {
+        return "Игрок $name: палуб осталось $shipsLeft, выстрелов $shots, попаданий $hits, точность ${"%.1f".format(accuracy())}%"
+    }
+    fun printStats() {
+        println(status())
+    }
+    fun takeDamage(): Boolean {
+        shipsLeft--
+        return shipsLeft > 0
+    }
+    fun registerShot(hit: Boolean) {
+        shots++
+        if (hit) hits++
+    }
+    fun reset() {
+        shots = 0
+        hits = 0
+        shipsLeft = 20
+        for (r in 0..9) {
+            for (c in 0..9) {
+                field[r][c] = '.'
+            }
+        }
     }
 }
-fun printBothFields(
-    player: Array<CharArray>,
-    enemy: Array<CharArray>,
-    showEnemyShips: Boolean = false
-) {
-    if (player.size != enemy.size) {
-        println("Ошибка: размеры полей не совпадают (${player.size} и ${enemy.size}).")
-        return
-    }
-    val size = player.size
-    println("=== Ваше поле ===" + " ".repeat(size * 2 + 5) + "=== Поле противника ===")
-
+fun printBothFields(player: Player, enemy: Player) {
+    println("=== Поле игрока ${player.name} ===          === Поле игрока ${enemy.name} ===")
     print("  ")
-    for (c in player.indices) print("$c ")
-    print(" ".repeat(5))
+    for (c in 0..9) print("$c ")
+    print("     ")
     print("  ")
-    for (c in enemy.indices) print("$c ")
+    for (c in 0..9) print("$c ")
     println()
-    for (r in player.indices) {
+    for (r in 0..9) {
         print("$r ")
-        for (c in player.indices) print("${player[r][c]} ")
-
-        print(" ".repeat(5))
-
+        for (c in 0..9) print("${player.field[r][c]} ")
+        print("     ")
         print("$r ")
-        for (c in enemy.indices) {
-            val ch = enemy[r][c]
-            val toPrint = if (!showEnemyShips && ch == '#') '.' else ch
-            print("$toPrint ")
-        }
+        for (c in 0..9) print("${enemy.field[r][c]} ")
         println()
     }
 }
 fun main() {
-    val playerField = createEmptyField()
-    playerField[3][2] = '#'
-    playerField[3][3] = '#'
-    playerField[3][4] = '#'
-    playerField[3][5] = '#'
+    val player = Player()
+    player.name = "Вы"
 
-    val enemyField = createEmptyField()
-    enemyField[5][7] = '#'
-    enemyField[6][7] = '#'
-    enemyField[7][7] = '#'
-    enemyField[5][5] = 'X'
-    enemyField[5][6] = 'O'
+    player.registerShot(true)   // попал
+    player.registerShot(false)  // промах
+    player.registerShot(true)   // попал
 
-    printBothFields(playerField, enemyField)
+    println(player.status())
+    // Игрок Вы: палуб осталось 20, выстрелов 3, попаданий 2, точность 66.7%
+
+    player.takeDamage()
+    player.takeDamage()
+    println(player.shipsLeft)   // 18
+    println(player.isAlive())   // true
+
+    player.reset()
+    println(player.status())
+    // Игрок Вы: палуб осталось 20, выстрелов 0, попаданий 0, точность 0.0%
+
+    val enemy = Player()
+    enemy.name = "Компьютер"
+    enemy.registerShot(true)
+    enemy.registerShot(true)
+    enemy.registerShot(true)
+    enemy.registerShot(false)
+
     println()
-    printField(playerField, "Ваше поле", debug = true)
-    println()
-    printField(enemyField, "Поле противника", showShips = false)
+    println(player.status())
+    println(enemy.status())
+    println("Вы жив: ${player.isAlive()}")
+    println("Компьютер жив: ${enemy.isAlive()}")
+    player.field[3][2] = '#'
+    player.field[3][3] = '#'
+    player.field[3][4] = '#'
+    player.field[3][5] = '#'
 
-    println()
-    val smallField = createEmptyField(8)
-    printField(smallField, "Маленькое поле 8x8")
+    enemy.field[5][7] = '#'
+    enemy.field[6][7] = '#'
+    enemy.field[7][7] = '#'
 
-    val bigField = createEmptyField(12)
-    printField(bigField, "Большое поле 12x12")
+    printBothFields(player, enemy)
 }
