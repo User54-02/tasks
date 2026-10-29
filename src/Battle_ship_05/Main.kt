@@ -223,6 +223,7 @@ fun main() {
     println()
     println("=== ИГРА НАЧАЛАСЬ ===")
     println("Введите 'quit' для выхода из игры.")
+    println("Введите 'debug' для отображения кораблей противника.")
     println()
 
     var playerTurn = true
